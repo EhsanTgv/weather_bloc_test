@@ -11,9 +11,9 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
   WeatherBloc() : super(WeatherInitial()) {
     on<WeatherEvent>((event, emit) async {
       if (event is GetWeather) {
-        WeatherLoading();
+        emit(WeatherLoading());
         final weather = await _fetchWeatherFromFakeApi(event.cityName);
-        WeatherLoaded(weather: weather);
+        emit(WeatherLoaded(weather: weather));
       }
     });
   }

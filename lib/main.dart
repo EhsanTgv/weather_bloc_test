@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:weather_bloc_test/model/weather.dart';
+
+import 'bloc/weather_bloc.dart';
 
 void main() => runApp(const MyApp());
 
@@ -10,7 +14,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Weather',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: WeatherPage(),
+      home: BlocProvider(
+        create: (context) => WeatherBloc(),
+        child: const WeatherPage(),
+      ),
     );
   }
 }
@@ -32,24 +39,52 @@ class _WeatherPageState extends State<WeatherPage> {
       body: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: const [
-            Text(
-              'City name',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Text(
-              '35 °C',
-              style: TextStyle(fontSize: 80),
-            ),
-            CityInputField(),
-          ],
+        child: BlocBuilder<WeatherBloc, WeatherState>(
+          builder: (context, state) {
+            if (state is WeatherInitial) {
+              return buildInitialInput();
+            } else if (state is WeatherLoading) {
+              return buildLoading();
+            } else if (state is WeatherLoaded) {
+              return buildColumnWithData(state.weather);
+            } else {
+              return buildInitialInput();
+            }
+          },
         ),
       ),
+    );
+  }
+
+  Widget buildInitialInput() {
+    return const Center(
+      child: CityInputField(),
+    );
+  }
+
+  Widget buildLoading() {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  Column buildColumnWithData(Weather weather) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Text(
+          weather.cityName,
+          style: const TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          "${weather.temperature.toStringAsFixed(1)} °C",
+          style: const TextStyle(fontSize: 80),
+        ),
+        const CityInputField(),
+      ],
     );
   }
 }
@@ -78,5 +113,8 @@ class _CityInputFieldState extends State<CityInputField> {
     );
   }
 
-  void submitCityName(String cityName) {}
+  void submitCityName(String cityName) {
+    final weatherBloc = BlocProvider.of<WeatherBloc>(context);
+    weatherBloc.add(GetWeather(city: cityName));
+  }
 }
